@@ -30,6 +30,8 @@ val paragraphCreator = """Elegiste:
     """.trimMargin()
 var recipes = mutableListOf<RecipeArchive>()
 
+//TODO: hacer rutina CSV
+
 fun viewRecipes() {
 
     println()
@@ -70,6 +72,7 @@ fun viewRecipes() {
 
 fun modifyRecipe() {
     val index = readRecipe()
+    val recipeName = recipes[index].parametersList[0].name
     if (index != -1) {
         //here starts the modifying routine
 
@@ -78,15 +81,20 @@ fun modifyRecipe() {
             val option = readLine()
             when (option) {
                 "1" -> {
+                    addIngredient(recipeName,
+                        recipes[index].parametersList)// it adds instantly to this object dont need to replace
+
 
                 }//add ingredient
                 "2" -> {
-                    recipes[index] = RecipeArchive(deleteIngredient(recipes[index].parametersList))//test
-                    if(recipes[index].parametersList.isEmpty()){
-                        recipes.removeAt(index)
-                    }
+                    //recipes[index] = RecipeArchive(deleteIngredient(recipes[index].parametersList))//test if i delete ingredients first then add ingredients, what happens?
+                    deleteIngredient(recipes[index].parametersList)
+
                 }//delete ingredient
                 "3" -> {
+                    if (recipes[index].parametersList.isEmpty()) {
+                        recipes.removeAt(index)
+                    }
                     return
                 }//back
                 else -> {
@@ -97,25 +105,159 @@ fun modifyRecipe() {
     }
 }
 
-fun deleteIngredient(parametersList: MutableList<RecipeConstructor>): MutableList<RecipeConstructor> { //elimina un ingrediente de la receta, sólo se llama en makeRecipe()
+fun addIngredient(
+    recipeName: String,
+    parametersList: MutableList<RecipeConstructor>,
+) {//must optimize this, but not truly
+    var finish = false
+    var parameters: RecipeConstructor? // = null
+    var ingredient: String
+    var parametersList = parametersList
+    val recipeName = recipeName
 
-    while (!summary(parametersList)) {//if summary has element, proceed
-        println("\nIngrese el índice del ingrediente a borrar: ")
-        println("R: Listo")
+    ingredientNull@ while (!finish) {
+        println()
+        ingredient = ""
+
+        println("Elige los ingredientes uno a uno.")
+
+        showMenu(category, false, true)//shows all the options available
+
         val option = readLine()
-        if (option == "R" || option == "r") {
-            break
-        } else {
-            try {
-                val optionInt = option?.toInt()
-                optionInt?.let { parametersList.removeAt(it) }
-                println("Ingrediente eliminado\n")
+        //lets try  to get the option to Int
+        try {
+            val optionInt = option?.toInt()
+            when (optionInt) {
+                in 0..4 -> {
+                    val list = listOfLists[optionInt!!]
+                    showMenu(list as List<String>,
+                        true,
+                        false) //the modify flag is false, must see what happens bc ill probably need to cancel
+                    ingredient = subList(list)
+                    if (ingredient == "") continue@ingredientNull //this to avoid exception when ingredient
 
-            } catch (e: Exception) {
-                println(msg1)
+                }// if user chooses a subList, must show another Menu
+                in 5..6 -> {
+                    ingredient = listOfLists[optionInt!!] as String
+
+                }//is user chooses a single item, go to defineParameters
+            }
+        } catch (e: Exception) {
+            when (option) {
+                "D" -> {
+                    parametersList = deleteIngredient(parametersList)
+                }//delete ingredient
+                "d" -> {
+                    parametersList = deleteIngredient(parametersList)
+                }//delete ingredient
+                "R" -> summary(parametersList)//summary
+                "r" -> summary(parametersList)
+
+                "#" -> finish = true
+
+                else -> println(msg1)
             }
         }
-        if(summary(parametersList)) break
+
+        if (ingredient != "") {
+            parameters = defineParameters(ingredient, recipeName)
+            if (parameters != null) {
+                //here i can choose the way i treat the parameters
+                parametersList.add(parameters)
+            }
+        } //adds items to parametersList
+    }
+
+
+}
+
+fun ingredientsSelector(recipeName: String) {
+    var finish = false
+    var parameters: RecipeConstructor? // = null
+    var ingredient: String
+    var parametersList = mutableListOf<RecipeConstructor>()
+
+    ingredientNull@ while (!finish) {
+        println()
+        ingredient = ""
+
+        println("Elige los ingredientes uno a uno.")
+
+        showMenu(category, false, false)//shows all the options available
+
+        val option = readLine()
+        //lets try  to get the option to Int
+        try {
+            val optionInt = option?.toInt()
+            when (optionInt) {
+                in 0..4 -> {
+                    val list = listOfLists[optionInt!!]
+                    showMenu(list as List<String>, true, false)
+                    ingredient = subList(list)//possible future debug
+                    if (ingredient == "") continue@ingredientNull //this to avoid exception when ingredient
+
+                }// if user chooses a subList, must show another Menu
+                in 5..6 -> {
+                    ingredient = listOfLists[optionInt!!] as String
+
+                }//is user chooses a single item, go to defineParameters
+            }
+        } catch (e: Exception) {
+            when (option) {
+                "C" -> {
+                    finish = cancel(false)
+                }//cancel
+                "c" -> {
+                    finish = cancel(false)
+                }//cancel
+                "D" -> {
+                    parametersList = deleteIngredient(parametersList)
+                }//delete ingredient
+                "d" -> {
+                    parametersList = deleteIngredient(parametersList)
+                }//delete ingredient
+                "R" -> summary(parametersList)//summary
+                "r" -> summary(parametersList)
+
+                "#" -> finish = finish(parametersList) //save recipe parameters
+
+                else -> println(msg1)
+            }
+        }
+
+        if (ingredient != "") {
+            parameters = defineParameters(ingredient, recipeName)
+            if (parameters != null) {
+                //here i can choose the way i treat the parameters
+                parametersList.add(parameters)
+            }
+        } //adds items to parametersList
+    }
+
+}//from here i must get the ingredients i shall use on my recipe
+
+fun deleteIngredient(parametersList: MutableList<RecipeConstructor>): MutableList<RecipeConstructor> { //elimina un ingrediente de la receta, sólo se llama en makeRecipe()
+
+    if (!summary(parametersList)) {
+        do {//if summary has element, proceed
+            println("\nIngrese el índice del ingrediente a borrar: ")
+            println("R: Listo")
+            val option = readLine()
+            if (option == "R" || option == "r") {
+                break
+            } else {
+                try {
+                    val optionInt = option?.toInt()
+                    optionInt?.let { parametersList.removeAt(it) }
+                    println("Ingrediente eliminado\n")
+
+                } catch (e: Exception) {
+                    println(msg1)
+                }
+            }
+
+        } while (!summary(parametersList))
+
     }
     return parametersList
 }
@@ -238,71 +380,6 @@ fun summary(parametersList: MutableList<RecipeConstructor>?): Boolean {
     }
 }
 
-fun ingredientsSelector(recipeName: String) {
-    var finish = false
-    var parameters: RecipeConstructor? // = null
-    var ingredient: String
-    var parametersList = mutableListOf<RecipeConstructor>()
-
-    ingredientNull@ while (!finish) {
-        println()
-        ingredient = ""
-
-        println("Elige los ingredientes uno a uno.")
-
-        showMenu(category, false)//shows all the options available
-
-        val option = readLine()
-        //lets try  to get the option to Int
-        try {
-            val optionInt = option?.toInt()
-            when (optionInt) {
-                in 0..4 -> {
-                    val list = listOfLists[optionInt!!]
-                    showMenu(list as List<String>, true)
-                    ingredient = subList(list)//possible future debug
-                    if (ingredient == "") continue@ingredientNull //this to avoid exception when ingredient
-
-                }// if user chooses a subList, must show another Menu
-                in 5..6 -> {
-                    ingredient = listOfLists[optionInt!!] as String
-
-                }//is user chooses a single item, go to defineParameters
-            }
-        } catch (e: Exception) {
-            when (option) {
-                "C" -> {
-                    finish = cancel(false)
-                }//cancel
-                "c" -> {
-                    finish = cancel(false)
-                }//cancel
-                "D" -> {
-                    parametersList = deleteIngredient(parametersList)
-                }//delete ingredient
-                "d" -> {
-                    parametersList = deleteIngredient(parametersList)
-                }//delete ingredient
-                "R" -> summary(parametersList)//summary
-                "r" -> summary(parametersList)
-
-                "#" -> finish = finish(parametersList) //save recipe parameters
-
-                else -> println(msg1)
-            }
-        }
-
-        if (ingredient != "") {
-            parameters = defineParameters(ingredient, recipeName)
-            if (parameters != null) {
-                //here i can choose the way i treat the parameters
-                parametersList.add(parameters)
-            }
-        } //adds items to parametersList
-    }
-
-}//from here i must get the ingredients i shall use on my recipe
-
 fun defineParameters(ingredient: String, recipeName: String): RecipeConstructor? {
     val ingredient = ingredient
     var unit: String
@@ -352,11 +429,11 @@ fun subList(list: List<String>): String {
     }
 }//return selected ingredient if out of range, null
 
-fun showMenu(list: List<String>, subMenu: Boolean) {
+fun showMenu(list: List<String>, subMenu: Boolean, modify: Boolean) {
     for ((index, item) in list.withIndex()) {
         println("$index: $item")
     }
-    println("C: Cancelar")
+    if (!modify) println("C: Cancelar")
     if (!subMenu) {
         println("D: Eliminar Ingrediente")
         println("R: Resumen")
