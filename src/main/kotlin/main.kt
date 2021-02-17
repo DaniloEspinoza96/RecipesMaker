@@ -1,5 +1,7 @@
 import module.RecipeConstructor
 import module.RecipeArchive
+import java.io.*
+
 
 val category: List<String> = listOf("Verduras", "Frutas", "Cereales", "Lácteos", "Carnes", "Agua", "Aceite")
 val vegetables: List<String> = listOf("Lechuga", "Apio", "Calabaza", "Papa", "Brócoli", "Cebolla", "Zanahoria")
@@ -29,8 +31,33 @@ val paragraphCreator = """Elegiste:
     """.trimMargin()
 var recipes = mutableListOf<RecipeArchive>()
 
+val saveRecipe = {
+    val fileOut = FileOutputStream("recipes.json")//check if json works
+    val outStream = ObjectOutputStream(fileOut)
+
+    outStream.writeObject(recipes)
+    outStream.close()
+    fileOut.close()
+
+}
+
+val getRecipe = {
+    val fileIn = FileInputStream("recipes.json")
+    val inStream = ObjectInputStream(fileIn)
+    val inRecipes = inStream.readObject()
+    inStream.close()
+    fileIn.close()
+    println(inRecipes)
+}
+
 
 fun viewRecipes() {
+
+    try{
+        getRecipe()
+    }catch (e:Exception){
+
+    }
 
     println()
     println(paragraphReader)
@@ -319,9 +346,14 @@ fun finish(parametersList: MutableList<RecipeConstructor>): Boolean {
         try {
             println("\nGuardando receta...")
             recipes.add(RecipeArchive(parametersList))
+            //test save object
+            saveRecipe()
+
+
             println("Receta: ${parametersList[0].name} añadida\n")
             return true
         } catch (e: Exception) {
+            println(e)
             println("No hay ingredientes en la receta, desea cancelar? (Y para confirmar)")
             val option2 = readLine()
             if (option2 == "y" || option2 == "Y") {
@@ -459,13 +491,15 @@ fun recipesMaker(finish: Boolean): Boolean {
         "3" -> {
             println("Salir"); finish = true
         }
-//        "4" -> {
-//            println("only for debuggers, remember to comment")//generates a standard recipe
-//            recipes.add(RecipeArchive(mutableListOf<RecipeConstructor>(RecipeConstructor("Pan con chancho",
-//                "Lechuga",
-//                3,
-//                "camionadas"))))//doesnt contain "chancho"
-//        }
+        "4" -> {
+            println("only for debuggers, remember to comment")//generates a standard recipe
+            recipes.add(RecipeArchive(mutableListOf<RecipeConstructor>(RecipeConstructor("Pan con chancho",
+                "Lechuga",
+                3,
+                "camionadas"))))//doesnt contain "chancho"
+            saveRecipe()
+
+        }
         else -> {
             println(msg1)
         }
