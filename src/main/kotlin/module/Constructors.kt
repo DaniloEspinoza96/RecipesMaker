@@ -12,7 +12,6 @@ data class RecipeConstructor(
         println("\nNombre de la receta: $name")
         println("Ingrediente: $ingredient")
         println("Cantidad: $quantity $unit\n")
-
     }
 }
 

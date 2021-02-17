@@ -2,7 +2,6 @@ import module.RecipeConstructor
 import module.RecipeArchive
 import java.io.*
 
-
 val category: List<String> = listOf("Verduras", "Frutas", "Cereales", "Lácteos", "Carnes", "Agua", "Aceite")
 val vegetables: List<String> = listOf("Lechuga", "Apio", "Calabaza", "Papa", "Brócoli", "Cebolla", "Zanahoria")
 val fruits: List<String> = listOf("Tomate", "Manzana", "Limón", "Uva", "Melón")
@@ -32,43 +31,38 @@ val paragraphCreator = """Elegiste:
 var recipes = mutableListOf<RecipeArchive>()
 
 val saveRecipe = {
-    val fileOut = FileOutputStream("recipes.json")//check if json works
+    val fileOut = FileOutputStream("recipes.txt")//check if json works
     val outStream = ObjectOutputStream(fileOut)
 
     outStream.writeObject(recipes)
     outStream.close()
     fileOut.close()
-
 }
 
 val getRecipe = {
-    val fileIn = FileInputStream("recipes.json")
-    val inStream = ObjectInputStream(fileIn)
-    val inRecipes = inStream.readObject()
-    inStream.close()
-    fileIn.close()
-    println(inRecipes)
+    try {
+        val fileIn = FileInputStream("recipes.txt")
+        val inStream = ObjectInputStream(fileIn)
+        val storedRecipes = inStream.readObject()
+        inStream.close()
+        fileIn.close()
+        recipes = storedRecipes as MutableList<RecipeArchive>
+    }catch(e:Exception){
+        //do nothing, its just so it doesnt stop the program
+    }
 }
 
 
 fun viewRecipes() {
-
-    try{
-        getRecipe()
-    }catch (e:Exception){
-
-    }
 
     println()
     println(paragraphReader)
 
     while (true) {
         println("Lista de recetas:")
-        if (recipes.size == 0) {
-            println("\nActualmente, no hay recetas para mostrar\n")
-            break
+        try {
+            getRecipe()
 
-        } else {
             for ((index, recipe) in recipes.withIndex()) {
                 println("$index: ${recipe.parametersList[0].name}")
             }
@@ -91,6 +85,10 @@ fun viewRecipes() {
                     println()
                 }
             }
+
+        } catch (e: Exception) {
+            println("\nActualmente, no hay recetas para mostrar\n")
+            break
         }
     }
 } //shows recipe names
@@ -107,21 +105,27 @@ fun modifyRecipe() {
             when (option) {
                 "1" -> {
                     addIngredient(recipeName,
-                        recipes[index].parametersList)// it adds instantly to this object dont need to replace
-
+                        recipes[index].parametersList)
+                    saveRecipe()
+                    for ((index, recipe) in recipes.withIndex()) {
+                        println("$index: ${recipe.parametersList[0].name}")
+                    }
 
                 }//add ingredient
                 "2" -> {
                     //recipes[index] = RecipeArchive(deleteIngredient(recipes[index].parametersList))//test if i delete ingredients first then add ingredients, what happens?
                     deleteIngredient(recipes[index].parametersList)
+                    saveRecipe()
 
                 }//delete ingredient
                 "3" -> {
                     if (recipes[index].parametersList.isEmpty()) {
                         recipes.removeAt(index)
+                        saveRecipe()
                     }
                     return
                 }//back
+
                 else -> {
                     println(msg1)
                 }
@@ -178,7 +182,9 @@ fun addIngredient(
                 "R" -> summary(parametersList)//summary
                 "r" -> summary(parametersList)
 
-                "#" -> finish = true
+                "#" -> {
+                    finish = true
+                }
 
                 else -> println(msg1)
             }
@@ -313,6 +319,7 @@ fun deleteRecipe() {
         val option = readLine()
         if (option == "y" || option == "Y") {
             recipes.removeAt(index)
+            saveRecipe()
             println("Receta \"$name\" eliminada\n")
         }
 
@@ -346,20 +353,18 @@ fun finish(parametersList: MutableList<RecipeConstructor>): Boolean {
         try {
             println("\nGuardando receta...")
             recipes.add(RecipeArchive(parametersList))
-            //test save object
-            saveRecipe()
-
 
             println("Receta: ${parametersList[0].name} añadida\n")
+            saveRecipe()
+
             return true
         } catch (e: Exception) {
-            println(e)
             println("No hay ingredientes en la receta, desea cancelar? (Y para confirmar)")
             val option2 = readLine()
             if (option2 == "y" || option2 == "Y") {
-                println("Continuando receta...");return true
+                println("Receta cancelada.");return true
             } else {
-                println("Receta cancelada.");return false
+                println("Continuando receta...");return false
             }
         }
     } else {
@@ -368,16 +373,34 @@ fun finish(parametersList: MutableList<RecipeConstructor>): Boolean {
 }
 
 fun checkName(recipeName: String) {
-
     var recipeName = recipeName
-    var check = { recipeName.filterNot { it.isWhitespace() } == "" }
+    var token: Boolean = false
 
-    while (check()) {
-        println(" $msg2 :)")
+    getRecipe()
+    var check =
+        { recipeName.filterNot { it.isWhitespace() } == "" }//if this sends true it means, recipeName is whitespace
+
+    var searchName = {
+        try {
+            for (recipe in recipes) {
+                if (recipe.parametersList[0].name == recipeName) {
+                    token = true//token true means that recipe already exists in the recipes
+                }
+                else token = false
+            }
+        } catch (e: Exception) {
+            token = false
+        }
+    }
+
+    while (true) {
+        searchName()
+        if (check()) println("$msg2 :)")
+        if (token) println("Esta receta ya se encuentra añadida en la base de datos, escoja un nombre nuevo.\n")
+        if(!check() and !token) return
         print("Nombre elegido: ")
         recipeName = readLine().toString()
     }
-    //println("Nombre elegido: $recipeName")
 }//checks if name is not ""
 
 fun cancel(subMenu: Boolean): Boolean {//boolean sub menu, true = está en sub menu
@@ -477,8 +500,6 @@ fun recipesMaker(finish: Boolean): Boolean {
     var finish = finish // con esto continuamos el loop while
     println(welcomeParagraph)
 
-    //place here a routine to check if there is a csv
-    if(!checkCSV()) createCSV()
 
     val option = readLine()
     when (option) {
@@ -491,15 +512,15 @@ fun recipesMaker(finish: Boolean): Boolean {
         "3" -> {
             println("Salir"); finish = true
         }
-        "4" -> {
-            println("only for debuggers, remember to comment")//generates a standard recipe
-            recipes.add(RecipeArchive(mutableListOf<RecipeConstructor>(RecipeConstructor("Pan con chancho",
-                "Lechuga",
-                3,
-                "camionadas"))))//doesnt contain "chancho"
-            saveRecipe()
-
-        }
+//        "4" -> {
+//            println("only for debuggers, remember to comment")//generates a standard recipe
+//            recipes.add(RecipeArchive(mutableListOf<RecipeConstructor>(RecipeConstructor("Pan con chancho",
+//                "Lechuga",
+//                3,
+//                "camionadas"))))//doesnt contain "chancho"
+//            saveRecipe()
+//
+//        }
         else -> {
             println(msg1)
         }
