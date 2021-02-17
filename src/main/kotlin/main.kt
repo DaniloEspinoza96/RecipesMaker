@@ -10,8 +10,7 @@ val meat: List<String> = listOf("Vacuno", "Cerdo", "Pollo", "Pavo")
 val listOfLists = listOf(vegetables, fruits, cereals, dairy, meat, "Agua", "Aceite")
 const val msg1: String = "Opción inválida."
 const val msg2: String = "Ingrese el nombre de la receta"
-val welcomeParagraph =
-    """-------------------------------
+val welcomeParagraph = """-------------------------------
 :: Bienvenido a Recipe Maker ::
             
 Selecciona la opción deseada:
@@ -458,13 +457,13 @@ fun recipesMaker(finish: Boolean): Boolean {
         "3" -> {
             println("Salir"); finish = true
         }
-        "4" -> {
-            println("only for debuggers, remember to comment")//generates a standard recipe
-            recipes.add(RecipeArchive(mutableListOf<RecipeConstructor>(RecipeConstructor("Pan con chancho",
-                "Lechuga",
-                3,
-                "camionadas"))))//doesnt contain "chancho"
-        }
+//        "4" -> {
+//            println("only for debuggers, remember to comment")//generates a standard recipe
+//            recipes.add(RecipeArchive(mutableListOf<RecipeConstructor>(RecipeConstructor("Pan con chancho",
+//                "Lechuga",
+//                3,
+//                "camionadas"))))//doesnt contain "chancho"
+//        }
         else -> {
             println(msg1)
         }
