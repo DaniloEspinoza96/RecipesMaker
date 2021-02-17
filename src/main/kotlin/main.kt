@@ -29,7 +29,6 @@ val paragraphCreator = """Elegiste:
     """.trimMargin()
 var recipes = mutableListOf<RecipeArchive>()
 
-//TODO: hacer rutina CSV
 
 fun viewRecipes() {
 
@@ -334,7 +333,7 @@ fun finish(parametersList: MutableList<RecipeConstructor>): Boolean {
     } else {
         return false
     }
-}// has to do with viewRecipe()
+}
 
 fun checkName(recipeName: String) {
 
@@ -347,7 +346,7 @@ fun checkName(recipeName: String) {
         recipeName = readLine().toString()
     }
     //println("Nombre elegido: $recipeName")
-}//comprueba que name no está vacío
+}//checks if name is not ""
 
 fun cancel(subMenu: Boolean): Boolean {//boolean sub menu, true = está en sub menu
 
@@ -446,6 +445,9 @@ fun recipesMaker(finish: Boolean): Boolean {
     var finish = finish // con esto continuamos el loop while
     println(welcomeParagraph)
 
+    //place here a routine to check if there is a csv
+    if(!checkCSV()) createCSV()
+
     val option = readLine()
     when (option) {
         "1" -> {
@@ -474,6 +476,7 @@ fun recipesMaker(finish: Boolean): Boolean {
 }
 
 fun main() {
+
     var finish = false
     while (!finish) finish = recipesMaker(finish)
 
